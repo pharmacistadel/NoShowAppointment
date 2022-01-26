@@ -1,0 +1,513 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Introduction about project:
+# This dataset collects information from 100k medical appointments in Brazil 
+# ,##and is focused on the question of whether or not patients show upfor their appointment.\n",
+# "#-ScheduledDay: tells us on what day the patient set up their appointment.\n",
+# "#-Neighborhood: indicates the location of the hospital.\n",
+# "#-Scholarship: indicates whether or not the patient is enrolled in Brasilian welfare program"
+
+# In[1]:
+
+
+#import important libraries
+import numpy as np
+import pandas as pd
+import datetime
+import matplotlib.pyplot as plt
+import seaborn as snb
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+
+# # First step of data analysis is:
+# #### Load Data, assessing, and display some general information about this data such as: shape, columns name, columns dtype, fast lookup about data
+
+# In[2]:
+
+
+#load data and read csv file
+df=pd.read_csv("noshowappointments-kagglev2-may-2016.csv")
+
+# calling data shape 
+df.shape
+
+
+# In[3]:
+
+
+# to display info. about columns names and data types
+    
+print(df.info())
+
+
+# # Second step : Data cleaning step (Wranling)
+# 1- Renaming some column names such as : Hipertension to Hypertension  and No-show to No_show.
+# 2- change some columns dtype such as : Patient id from float to int64, SchedualDay and AppointmentDay from object to datetime 
+# 3- 6- Extract day and hour from SchedualDay and appointmentDay.
+# 4- check duplication.
+# 5- check Null values
+# 
+
+# In[4]:
+
+
+#Rename te wrong word (Hipertension) to Hypertension
+df.rename(columns={"Hipertension":"Hypertension"},inplace=True)
+#rename No-shoe to No_show
+df.rename(columns={"No-show":"No_show"},inplace=True)
+
+
+# In[5]:
+
+
+# calling column names with first 5 rows to display our data
+
+df.head()
+
+
+# In[6]:
+
+
+#Convert PatientId from float64 to int64
+df["PatientId"]=df["PatientId"].astype("int64")
+# Convert columns type (ScheduledDay and AppointmentDay) from object to datetime64[ns]
+df=df.astype({"ScheduledDay":'datetime64[ns]',"AppointmentDay":'datetime64[ns]'})
+
+
+# In[7]:
+
+
+#Extract schedul_day from ScheduledDay column
+df["Schedul_day"]=df["ScheduledDay"].dt.dayofweek
+#Extract Appointment_day from AppointmentDay column
+df["Appointment_day"]=df["AppointmentDay"].dt.dayofweek
+#Extract schedul_hour from ScheduledDay column
+df["Schedual_hour"]=df["ScheduledDay"].dt.hour
+
+
+# Are there any null values?
+
+# In[8]:
+
+
+#Sum of cells in each column contains null value 
+df.isnull().sum()
+
+
+# no null values
+
+# In[9]:
+
+
+df.isnull().count()
+
+
+# ### Step extract duplication
+
+# In[10]:
+
+
+#check duplication
+df.duplicated().sum()
+
+
+# Mean, there is no general duplication between columns.Although we will examine if there is any duplication in between certain columns.
+# 
+
+# Nice, there is no duplication or null values
+# 
+
+# #### Step extract dplication in between columns.
+
+# ###### How many unique patients id?
+
+# In[11]:
+
+
+#check unique id's
+df["PatientId"].nunique()
+
+
+# This mean 62299 is from 110527 are unique, this mean there are some duplicated ids.
+
+# In[12]:
+
+
+#check sum of duplicated ids
+df["PatientId"].duplicated().sum()
+
+
+# Number of duplicated ids is 48228,this mean that, one patient id was written more than one time.
+
+# ### step knowing, from where did theses duplication come, and cleaning them.
+
+# Are there duplication come from duplication in(PatientId and appointmentId)?
+
+# In[13]:
+
+
+#check duplication between PatientId and apoopointment id
+df.duplicated(["PatientId","AppointmentID"]).sum()
+
+
+# There is no sharing between Patient id and appointment id,mean, each patient id has diffrent appointment id
+
+# Are there any duplication between patientId and No_show?
+
+# In[14]:
+
+
+#check dulication between id and  show status
+df.duplicated(["PatientId","No_show"]).sum()
+
+
+# Opp, this mean that 38710 from 48228 come from duplication in between patient id and showing status. so need to remove them.
+
+# In[15]:
+
+
+#remove duplicates patientIds with duplicated show state
+df.drop_duplicates(['PatientId','No_show'],inplace=True)
+
+
+# In[16]:
+
+
+#Recheck dulication between id and  show status
+df.duplicated(["PatientId","No_show"]).sum()
+
+
+# Now, there is no duplication in between PatientId and Show status.
+
+# Check other duplication in between other columns.
+
+# In[17]:
+
+
+df.duplicated(["PatientId","Diabetes","Hypertension","Handcap","Alcoholism","Scholarship","Neighbourhood"]).sum()
+
+
+# opp, There are 9518 from 38710 come from duplication inbetween patient id and other columns.
+
+# Are there any duplication between patient id and age?
+
+# In[18]:
+
+
+df.duplicated(["PatientId","Age","Diabetes","Hypertension","Handcap","Alcoholism","Scholarship","Neighbourhood"]).sum()
+
+
+# There are 9122 duplication from 9518 due to duplication between patient id and age, mean there is more than one patient has the same age. 
+
+# Are there any duplication in between PatientId and sms recieved?
+
+# In[19]:
+
+
+#check dulication between id and  SmS recieved
+df.duplicated(["PatientId","Diabetes","Hypertension","Handcap","Alcoholism","Scholarship","Neighbourhood","SMS_received"]).sum()
+
+
+# oop, there are 5394 patient recieved more than one message.
+# this mean 5394 from 9518 duplication come from duplication in between patient id and Sms recived.
+
+# Are there duplications between patient id and Appointment day?
+
+# In[20]:
+
+
+df.duplicated(["PatientId","AppointmentDay"]).sum()
+
+
+# opp, there are 703 duplication between id and appointment day.
+
+# Are there any duplication between patientid and appointmentDay?
+
+# In[21]:
+
+
+df.duplicated(["PatientId","ScheduledDay","AppointmentDay"]).sum()
+
+
+# opp, there ara 17 duplication between ptientid and appointmentday
+
+# ##### Data type after editing
+
+# In[22]:
+
+
+
+df.info()
+
+
+# # Third step : Analyzing data
+# 1- summary of general statics shows: count, mean, std, min, max, 25%,50% and 75% of each column.
+# 2- 
+
+# In[23]:
+
+
+# this function to computes a summary of statistics
+df.describe()
+
+
+# ###### From the prevoius static summary, we had a notice that:
+# 1- The min. of age is -1, so we will remove it.
+# 2- Most of people don't have a scholarship.(75%).
+# 3- Most of people (75%) don't have hypertension, diabities, or handcapa and don't drink alcohol.
+# 
+
+# In[24]:
+
+
+#display min age
+df["Age"].min()
+
+
+# In[25]:
+
+
+# display row index  that contains Age=-1
+mask_false_age=df.query('Age==-1')
+mask_false_age
+
+
+# In[26]:
+
+
+#drop age = -1 index
+df.drop(index=99832,inplace=True)
+
+
+# In[27]:
+
+
+#Ensure that ae index== -1 was deleted
+df.describe()
+
+
+# nice, min age now becomes = 0 not -1
+
+# How many did patient attend?
+
+# In[28]:
+
+
+attend=df.No_show=="No" 
+df[attend].count()
+
+
+# There were 54154 from 71817 after dropping duplicated id with No_show cases.
+
+# How many did patients not attend?
+
+# In[29]:
+
+
+not_attend=df.No_show=="Yes" 
+df[not_attend].count()
+
+
+# There are 17663 patients from 71817 didn't attend.
+
+# What did the most day the patients reserve and take appointment?
+
+# In[30]:
+
+
+#display the most day of schedul
+df["Schedul_day"].value_counts(),df["Schedul_day"].mode()[0]
+
+
+# In[31]:
+
+
+
+    plt.figure(figsize=[16,7])
+   
+    df["Schedul_day"].value_counts(normalize=True).plot(kind="pie",autopct='%1.1f%%')
+    plt.legend();
+    plt.title("Comparison between days of schedual")
+    
+    plt.ylabel("week's Days")
+
+
+# In[32]:
+
+
+# display the most day of appointmwnt
+df["Appointment_day"].value_counts(),df["Appointment_day"].mode()[0]
+
+
+# In[33]:
+
+
+
+    plt.figure(figsize=[16,7])
+    
+    df["Appointment_day"].value_counts().plot(kind="pie",autopct='%1.1f%%')
+    plt.legend();
+    plt.title("Comparison between days of Appointment")
+    
+    plt.ylabel("week's Days")
+
+
+# From, previous data, we notice that Thurasday(day 1) was the most day of revised and appointment and may this led to some mistake in entering data due to crowdniss in reserving. saturday (day 5) was the least day of resering and appointment, may be dut to weekend.
+
+# In[34]:
+
+
+def attend_age(df,col_name,come,absent):
+    df[col_name][attend].hist(alpha=0.5,bins=6,color="green",label="Attend")
+    df[col_name][not_attend].hist(alpha=0.5,bins=6,color="blue",label="absent")
+    plt.legend();
+    plt.title("Comparison between who were attended and absent according to age ")
+    plt.xlabel("Age")
+    plt.ylabel("Number of patients")
+    return 
+
+
+# In[35]:
+
+
+def attend_sms(df,col_name,come,absent):
+    df[col_name][attend].hist(alpha=0.5,bins=6,color="green",label="Attend")
+    df[col_name][not_attend].hist(alpha=0.5,bins=6,color="yellow",label="absent")
+    plt.legend();
+    plt.title("Comparison between who were attended and absent according to SMS recieved ")
+    plt.xlabel("SMS recieved")
+    plt.ylabel("Number of patients")
+    return
+
+
+# In[36]:
+
+
+def attend_sms(df,col_name,come,absent):
+    df[col_name][attend].hist(alpha=0.5,bins=6,color="green",label="Attend")
+    df[col_name][not_attend].hist(alpha=0.5,bins=6,color="yellow",label="absent")
+    plt.legend();
+    plt.title("Comparison between who were attended and absent according to SMS recieved ")
+    plt.xlabel("SMS recieved")
+    plt.ylabel("Number of patients")
+    return
+
+
+# In[37]:
+
+
+def attend_gender(df,col_name,come,absent):
+    
+    plt.figure(figsize=[16,4])
+    df[col_name][attend].value_counts(normalize=True).plot(kind="pie",label="Attend",autopct='%1.1f%%')
+    plt.legend();
+    plt.title("Comparison between femal and male who were attend ")
+    plt.xlabel("Gender type")
+    plt.ylabel("Number of patients")
+    return
+
+
+# In[38]:
+
+
+def attend_district(df,col_name,come,absent):
+    plt.figure(figsize=[16,4])
+    df[col_name][attend].value_counts().plot(kind="bar",color="red",label="Attend")
+    df[col_name][not_attend].value_counts().plot(kind="bar",color="blue",label="absent")
+    plt.legend();
+    plt.title("Comparison between who were attended and absent according to district-Neighbourhood- ")
+    plt.xlabel("Neighbourhood")
+    plt.ylabel("Number of patients")
+    
+    return
+
+
+# In[39]:
+
+
+def attend_district_sms(df,col_name,come,absent):
+    plt.figure(figsize=[16,6])
+    df[attend].groupby(col_name).SMS_received.mean().plot(kind="bar",color="red",label="Attend")
+    df[not_attend].groupby(col_name).SMS_received.mean().plot(kind="bar",color="blue",label="absent")
+    plt.legend();
+    plt.title("Comparison between who were attended and absent according to district-Neighbourhood_Sms recieved ")
+    plt.xlabel("Neighbourhood")
+    plt.ylabel("Number of patients")
+    return
+
+
+# In[40]:
+
+
+
+    attend_report=input("Enter number of Histogram :\n1- Relation between age and attendance.\n2- Relation between Sms recived and attendance.\n3- Relation between Femal and Male no. and attendance.\n4- Relation between between attendance and district\n5- Relation between attendance and district and sms recieved\n6- General Histograms ")
+    print("-*-"*20)
+    while True:
+        try:
+
+            if attend_report=="1":
+                print("# You chosed a report no.1 about relation between attendance and age\n")
+                attend_age(df,"Age",attend,not_attend)
+                print("From this histogram, we notice that: \n 1- The young people were more attending than older", 
+            ",this mean that the parients take care about their young.\n",
+             "2- The older attendenace is least,may be due to low awarness.\n")
+                break
+            elif attend_report=="2":
+                print("You choosed a report no. 2 about relation betwwen attendance and SMs recieved\n")
+                print("From this histogram, we notice that no. of people who received Smss less,but more attendence, so we should recheck smss")
+                attend_sms(df,"SMS_received",attend,not_attend)
+                break
+            elif attend_report=="3":
+                print("You choosed a report no. 3 about relation between attendance and gender type\n")
+                attend_gender(df,"Gender",attend,not_attend)
+    #display the most gender in tis data
+                df["Gender"].mode()[0]
+                notice= "From this Pie chart, we notice that, "
+                if df["Gender"].mode()[0] =="F":
+                    print(notice,"The most gender is : Femal")
+                elif df["Gender"].mode()[0]=="M":
+                    print(notice,"The most gender is : Male")
+                break
+            elif attend_report=="4":
+    
+                print("You choosed a report no. 4 about relation between attendance and district\n")
+                print("From this chart, we notice that : ")
+                attend_district(df,"Neighbourhood",attend,not_attend)
+    #display mode and max, and minum region appeared in this appointment 
+                print("The most region share in this medical appointment is: ",df["Neighbourhood"].mode()[0],
+                 ", and the minumum region is: ",df["Neighbourhood"].min())
+                break
+        
+            elif attend_report=="5":
+    
+                 print("You choosed a report no. 5 about relation between attendance and district and sms recieved\n")
+                 print("From this chart, we notice that; almost of attendance who recieved SMSs come from districts with red color more than blue color  ")
+   
+                 attend_district_sms(df,"Neighbourhood",attend,not_attend)
+                 break
+            elif attend_report=="6":
+                print("You choosed no.6 a general Histogram\n")
+                df.hist(figsize=(20,20));
+                break
+            else:
+                print("Please, enter number from 1-5 to choose the report you want")
+        except:
+                print("There is something erro")
+
+                restart = input('\nWould you like to restart? Enter yes or no.\n')
+    
+
+
+# # Conclusion:
+# ##### 1- 1- The young people were more attending than older ,this mean that the parients take care about their young.
+# ##### 2- The older attendenace is least,may be due to low awarness.
+# ##### 3- No. of people who received Smss less,but more attendence, so we should recheck smss
+# ##### 4- The most gender is : Femal. and this is in women habit. hhhh
+# ##### 5-  The most region share in this medical appointment is:  JARDIM CAMBURI , and the minumum region is:  AEROPORTO.
+# ##### 6- Almost of attendance who recieved SMSs come from districts with red color more than blue color
+# 
+
+# # Limitations:
+
+# ##### No Clear correlation between attendance and chronic diseases and sholarship.
